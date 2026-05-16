@@ -155,7 +155,7 @@
     .modal-stats { grid-template-columns: repeat(2,1fr); }
     .modal-stat:nth-child(2) { border-right: none; }
   }
-  .swap-icon, .swap-btn-label { color: #e8694a !important; }
+  .swap-icon, .swap-btn-label, .swap-btn span { color: #e8694a !important; -webkit-text-fill-color: #e8694a !important; }
 </style>
 </head>
 <body>
@@ -360,11 +360,11 @@ function renderGrid() {
     swapBtn.dataset.index = i;
 
     const swapIcon = document.createElement('span');
-    swapIcon.style.cssText = 'color:#e8694a;font-size:16px;font-weight:900;line-height:1;font-family:sans-serif;';
+    swapIcon.setAttribute('style', 'color:#e8694a !important;font-size:16px;font-weight:900;line-height:1;font-family:sans-serif;');
     swapIcon.textContent = '↻';
 
     const swapLabel = document.createElement('span');
-    swapLabel.style.cssText = 'color:#e8694a;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;font-family:DM Sans,sans-serif;';
+    swapLabel.setAttribute('style', 'color:#e8694a !important;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;font-family:DM Sans,sans-serif;');
     swapLabel.textContent = 'Swap';
 
     swapBtn.appendChild(swapIcon);
