@@ -1,1 +1,442 @@
-# weeklymealplanner
+[weekly-meal-planner.html](https://github.com/user-attachments/files/27854128/weekly-meal-planner.html)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Meal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --warm-white: #faf8f4;
+    --charcoal: #1a1a18;
+    --rust: #c4512a;
+    --rust-light: #e8694a;
+    --gold: #c9a84c;
+    --sage: #5a7d5a;
+    --muted: #8a8478;
+    --border: #ddd8cc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--charcoal); min-height: 100vh; }
+
+  header { background: var(--charcoal); padding: 36px 48px 28px; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 3px solid var(--rust); }
+  .header-title { font-family: 'Playfair Display', serif; font-size: clamp(28px,4vw,44px); font-weight: 900; color: var(--cream); letter-spacing: -0.5px; line-height: 1; }
+  .header-title span { color: var(--rust-light); font-style: italic; }
+  .header-sub { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+  .header-right { text-align: right; }
+  .header-badge { background: var(--rust); color: var(--cream); font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; padding: 6px 14px; border-radius: 2px; }
+  .header-week { font-size: 11px; letter-spacing: 1px; color: var(--muted); margin-top: 8px; }
+
+  .week-view { padding: 48px; max-width: 1400px; margin: 0 auto; }
+  .week-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+
+  .meal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 16px; }
+
+  /* ── CARD ── */
+  .meal-card {
+    background: var(--warm-white); border: 1px solid var(--border); border-radius: 4px;
+    overflow: hidden; position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .meal-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12); }
+  .meal-card.swapping { animation: swapOut 0.3s ease forwards; }
+  .meal-card.swapped-in { animation: swapIn 0.35s ease forwards; }
+
+  @keyframes swapOut {
+    0%   { opacity:1; transform: scale(1) translateY(0); }
+    100% { opacity:0; transform: scale(0.9) translateY(-8px); }
+  }
+  @keyframes swapIn {
+    0%   { opacity:0; transform: scale(0.9) translateY(8px); }
+    100% { opacity:1; transform: scale(1) translateY(0); }
+  }
+
+  .card-day { background: var(--charcoal); font-size: 9px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .card-day-label { color: var(--gold); }
+
+  /* swap button — all colour set here, isolated from parent */
+  .swap-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 9px; letter-spacing: 0; text-transform: none;
+    padding: 0; line-height: 1;
+    display: flex; align-items: center; gap: 3px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  .swap-btn:hover { opacity: 0.75; transform: rotate(60deg) scale(1.2); }
+  .swap-icon { font-size: 16px; font-weight: 900; color: #e8694a !important; line-height: 1; font-style: normal; }
+  .swap-btn-label { font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; color: #e8694a !important; }
+
+  .card-emoji { font-size: 52px; text-align: center; padding: 24px 16px 12px; line-height: 1; background: linear-gradient(135deg,#f9f5ee 0%,#ede8de 100%); cursor: pointer; }
+  .card-body { padding: 14px 16px 18px; cursor: pointer; }
+  .card-protein-tag { display: inline-block; background: var(--sage); color: #fff; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; margin-bottom: 8px; }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; line-height: 1.3; color: var(--charcoal); margin-bottom: 6px; }
+  .card-meta { font-size: 11px; color: var(--muted); display: flex; gap: 10px; }
+
+  .card-view-hint { position: absolute; bottom: 10px; right: 12px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--rust); opacity: 0; transition: opacity 0.2s; }
+  .meal-card:hover .card-view-hint { opacity: 1; }
+
+  /* swap counter badge */
+  .swap-count {
+    position: absolute; top: 38px; right: 10px;
+    background: var(--rust); color: #fff; font-size: 8px; font-weight: 700;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: none; align-items: center; justify-content: center;
+  }
+  .swap-count.visible { display: flex; }
+
+  /* ── NUTRITION STRIP ── */
+  .nutrition-strip { background: var(--charcoal); margin: 0 48px 48px; border-radius: 4px; display: grid; grid-template-columns: repeat(4,1fr); padding: 20px 32px; gap: 16px; }
+  .n-stat { text-align: center; }
+  .n-stat .val { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--rust-light); }
+  .n-stat .lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+  /* ── MODAL ── */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(10,10,8,0.75); z-index: 100; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 24px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--warm-white); max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 4px; position: relative; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+  .modal-hero { background: var(--charcoal); padding: 40px 48px 32px; position: relative; }
+  .modal-day-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  .modal-emoji { font-size: 72px; position: absolute; right: 48px; top: 32px; opacity: 0.9; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,32px); font-weight: 900; color: var(--cream); line-height: 1.15; max-width: 420px; margin-bottom: 12px; }
+  .modal-tagline { font-size: 13px; color: var(--muted); max-width: 380px; line-height: 1.6; }
+  .modal-close { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; color: var(--cream); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; font-family: sans-serif; }
+  .modal-close:hover { background: rgba(255,255,255,0.18); }
+
+  .modal-stats { display: grid; grid-template-columns: repeat(4,1fr); border-bottom: 1px solid var(--border); }
+  .modal-stat { padding: 16px 20px; text-align: center; border-right: 1px solid var(--border); }
+  .modal-stat:last-child { border-right: none; }
+  .modal-stat .sv { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--rust); }
+  .modal-stat .sl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+  .modal-body { padding: 36px 48px 48px; }
+  .section-title { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--rust); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  .ingredients-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 36px; }
+  .ingredient { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .ingredient-dot { width: 6px; height: 6px; background: var(--sage); border-radius: 50%; flex-shrink: 0; }
+  .ingredient-qty { font-weight: 500; color: var(--charcoal); min-width: 70px; font-size: 13px; }
+  .ingredient-name { color: var(--muted); font-size: 13px; }
+
+  .steps { list-style: none; }
+  .step { display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start; }
+  .step-num { width: 28px; height: 28px; background: var(--charcoal); color: var(--gold); border-radius: 50%; font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 14px; line-height: 1.7; color: #3a3830; padding-top: 4px; }
+  .step-text strong { color: var(--charcoal); }
+
+  .tip-box { background: linear-gradient(135deg,#f0ebe0,#e8e1d4); border-left: 3px solid var(--gold); padding: 16px 20px; border-radius: 0 4px 4px 0; margin-top: 28px; font-size: 13px; line-height: 1.6; color: #5a5448; }
+  .tip-box strong { color: var(--charcoal); font-weight: 500; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--charcoal); color: var(--cream);
+    font-size: 12px; font-weight: 500; letter-spacing: 0.5px;
+    padding: 10px 20px; border-radius: 3px;
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    z-index: 200; white-space: nowrap; pointer-events: none;
+    border-left: 3px solid var(--rust);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px) {
+    header { padding: 24px; }
+    .week-view { padding: 24px; }
+    .nutrition-strip { margin: 0 24px 24px; grid-template-columns: repeat(2,1fr); }
+    .meal-grid { grid-template-columns: repeat(3,1fr); }
+    .modal-body { padding: 24px; }
+    .modal-hero { padding: 28px 24px 24px; }
+    .modal-emoji { display: none; }
+    .ingredients-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .meal-grid { grid-template-columns: 1fr 1fr; }
+    .modal-stats { grid-template-columns: repeat(2,1fr); }
+    .modal-stat:nth-child(2) { border-right: none; }
+  }
+  /* SWAP BUTTON COLOUR OVERRIDE — must stay last */
+  .swap-icon, .swap-btn-label { color: #e8694a !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-title">This Week's <span>Dinners</span></div>
+    <div class="header-sub">High Protein · Low Carb · Evening Meals</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">7 Nights Planned</div>
+    <div class="header-week" id="weekLabel"></div>
+  </div>
+</header>
+
+<div class="week-view">
+  <div class="week-label" id="shoppingNote"></div>
+  <div class="meal-grid" id="mealGrid"></div>
+</div>
+
+<div class="nutrition-strip">
+  <div class="n-stat"><div class="val">38g+</div><div class="lbl">Avg Protein</div></div>
+  <div class="n-stat"><div class="val">&lt;20g</div><div class="lbl">Avg Net Carbs</div></div>
+  <div class="n-stat"><div class="val">~450</div><div class="lbl">Avg Calories</div></div>
+  <div class="n-stat"><div class="val">7</div><div class="lbl">Nights Covered</div></div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal">
+    <div class="modal-hero">
+      <button class="modal-close" id="closeBtn">✕</button>
+      <div class="modal-day-tag" id="mDayTag"></div>
+      <div class="modal-emoji" id="mEmoji"></div>
+      <div class="modal-title" id="mTitle"></div>
+      <div class="modal-tagline" id="mTagline"></div>
+    </div>
+    <div class="modal-stats" id="mStats"></div>
+    <div class="modal-body">
+      <div class="section-title">Ingredients</div>
+      <div class="ingredients-grid" id="mIngredients"></div>
+      <div class="section-title">Method</div>
+      <ol class="steps" id="mSteps"></ol>
+      <div class="tip-box" id="mTip"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ALL_RECIPES = [
+  { emoji:"🥩", protein:"Beef", name:"Seared Ribeye with Garlic Butter & Wilted Spinach", tagline:"A classic pan-seared steak resting in fragrant garlic and thyme butter, paired with iron-rich wilted spinach.", stats:[{v:"42g",l:"Protein"},{v:"520",l:"Calories"},{v:"4g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"1 × 250g",name:"Ribeye steak"},{qty:"2 tbsp",name:"Unsalted butter"},{qty:"3 cloves",name:"Garlic, crushed"},{qty:"3 sprigs",name:"Fresh thyme"},{qty:"200g",name:"Baby spinach"},{qty:"1 tbsp",name:"Olive oil"},{qty:"½ tsp",name:"Flaked sea salt"},{qty:"½ tsp",name:"Cracked black pepper"},{qty:"1 tsp",name:"Lemon juice"}], steps:["Remove steak from fridge <strong>30 minutes before cooking</strong>. Pat completely dry and season generously on both sides.","Heat a cast-iron skillet until smoking. Add olive oil, lay in the steak. Sear <strong>2–3 minutes per side</strong> without moving, until a deep crust forms.","Reduce heat to medium. Add butter, garlic, and thyme. Tilt the pan and <strong>baste continuously</strong> for 1 minute. Remove and rest 5–6 minutes.","In the same pan, add spinach over medium heat. Toss 1–2 minutes until wilted. Season with lemon juice and salt.","Slice against the grain. Plate the spinach, lay steak over it, and pour resting juices on top."], tip:"<strong>Chef's tip:</strong> A thermometer should read 54°C for medium-rare before resting." },
+  { emoji:"🥩", protein:"Beef", name:"Beef Tenderloin with Mushroom & Thyme Pan Sauce", tagline:"Lean, tender fillet medallions served with a silky mushroom and red wine reduction.", stats:[{v:"44g",l:"Protein"},{v:"490",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"2 × 180g",name:"Beef tenderloin medallions"},{qty:"200g",name:"Chestnut mushrooms, sliced"},{qty:"1",name:"Shallot, finely diced"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"100ml",name:"Dry red wine"},{qty:"150ml",name:"Beef stock"},{qty:"1 tbsp",name:"Unsalted butter"},{qty:"2 sprigs",name:"Fresh thyme"},{qty:"1 tbsp",name:"Olive oil"}], steps:["Season medallions. Heat olive oil in a heavy pan over high heat until smoking.","Sear medallions <strong>2 minutes per side</strong> for medium-rare. Remove and rest on a warm plate.","Reduce heat. Cook shallot until soft, add garlic and mushrooms. Cook <strong>5 minutes</strong>.","Add wine and reduce by half. Add stock and thyme; simmer <strong>5 minutes</strong>. Stir in butter off heat.","Plate medallions and spoon sauce over generously."], tip:"<strong>Chef's tip:</strong> Don't move the meat during searing — sustained contact builds the crust." },
+  { emoji:"🥩", protein:"Beef", name:"Korean-Style Beef Bulgogi with Courgette Noodles", tagline:"Tender marinated beef strips with sesame, ginger, and soy, served over spiralised courgette.", stats:[{v:"38g",l:"Protein"},{v:"410",l:"Calories"},{v:"10g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"400g",name:"Sirloin, thinly sliced"},{qty:"3 tbsp",name:"Soy sauce"},{qty:"1 tbsp",name:"Sesame oil"},{qty:"1 tbsp",name:"Grated fresh ginger"},{qty:"3 cloves",name:"Garlic, minced"},{qty:"1 tsp",name:"Chilli flakes"},{qty:"2",name:"Courgettes, spiralised"},{qty:"2",name:"Spring onions, sliced"},{qty:"1 tbsp",name:"Toasted sesame seeds"}], steps:["Mix soy, sesame oil, ginger, garlic, and chilli. Toss beef strips in the marinade and leave <strong>15 minutes minimum</strong>.","Heat a wok until very hot. Cook beef in batches — <strong>do not crowd</strong> — for 1–2 minutes until caramelised.","Stir-fry courgette noodles separately in a little sesame oil for 2 minutes. Season.","Plate the noodles, top with beef, and pour over any pan juices.","Scatter with spring onions and sesame seeds. Serve immediately."], tip:"<strong>Chef's tip:</strong> Freeze the beef for 20 minutes before slicing to get paper-thin pieces." },
+  { emoji:"🥩", protein:"Beef", name:"Slow-Braised Beef Short Ribs with Celeriac Mash", tagline:"Meltingly tender short ribs braised in red wine, served on silky low-carb celeriac mash.", stats:[{v:"46g",l:"Protein"},{v:"580",l:"Calories"},{v:"12g",l:"Net Carbs"},{v:"3.5 hrs",l:"Time"}], ingredients:[{qty:"1kg",name:"Beef short ribs, bone-in"},{qty:"1 head",name:"Celeriac, peeled and cubed"},{qty:"200ml",name:"Dry red wine"},{qty:"300ml",name:"Beef stock"},{qty:"2",name:"Carrots, roughly chopped"},{qty:"2 sticks",name:"Celery, chopped"},{qty:"1",name:"Onion, diced"},{qty:"3 cloves",name:"Garlic"},{qty:"2 sprigs",name:"Rosemary"}], steps:["Preheat oven to 160°C. Season ribs. Brown in a casserole dish over high heat, <strong>all sides</strong>. Remove.","Cook onion, carrot, celery 5 minutes. Add garlic. Pour in wine, reduce by half. Add stock and rosemary.","Return ribs; liquid should come halfway up. Cover and braise <strong>3–3.5 hours</strong> until meat pulls from the bone.","Boil celeriac until tender (~20 min). Drain, mash with butter and season well.","Remove ribs. Strain and reduce braising liquid until glossy. Serve on celeriac mash."], tip:"<strong>Chef's tip:</strong> Short ribs are best made a day ahead — chilled fat solidifies and is easily removed before reheating." },
+  { emoji:"🥩", protein:"Beef", name:"Spiced Beef Kofta with Tzatziki & Roasted Peppers", tagline:"Hand-rolled minced beef kofta spiced with cumin and allspice, grilled and served with cool tzatziki.", stats:[{v:"38g",l:"Protein"},{v:"430",l:"Calories"},{v:"8g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"500g",name:"Minced beef (20% fat)"},{qty:"1 tsp",name:"Ground cumin"},{qty:"½ tsp",name:"Ground allspice"},{qty:"½ tsp",name:"Smoked paprika"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"2 tbsp",name:"Fresh parsley, chopped"},{qty:"200g",name:"Greek yoghurt"},{qty:"½",name:"Cucumber, grated and squeezed dry"},{qty:"2",name:"Red peppers, halved and deseeded"}], steps:["Mix beef with cumin, allspice, paprika, garlic, parsley, salt and pepper. Knead 2 minutes. Shape into 8 ovals around skewers.","Make tzatziki: mix yoghurt with squeezed cucumber, garlic, lemon juice, and salt. Refrigerate.","Grill peppers under a hot grill until charred and soft (~15 min).","Grill kofta on high heat, <strong>turning every 2 minutes</strong>, for 8–10 minutes until charred and cooked through.","Serve kofta alongside roasted peppers and a generous spoonful of tzatziki."], tip:"<strong>Chef's tip:</strong> Higher-fat mince (20%) keeps kofta moist. Lean mince dries out on the grill." },
+  { emoji:"🥩", protein:"Beef", name:"Thai Basil Beef with Crispy Fried Egg", tagline:"A fiery Thai street-food classic — minced beef stir-fried with Thai basil and fish sauce, topped with a lacey fried egg.", stats:[{v:"40g",l:"Protein"},{v:"450",l:"Calories"},{v:"9g",l:"Net Carbs"},{v:"15 min",l:"Time"}], ingredients:[{qty:"450g",name:"Minced beef"},{qty:"4 cloves",name:"Garlic, minced"},{qty:"3",name:"Bird's eye chillies, sliced"},{qty:"2 tbsp",name:"Fish sauce"},{qty:"1 tbsp",name:"Oyster sauce"},{qty:"1 tsp",name:"Soy sauce"},{qty:"1 tsp",name:"Sesame oil"},{qty:"Large handful",name:"Thai basil leaves"},{qty:"2 large",name:"Eggs"}], steps:["Mix fish sauce, oyster sauce, soy, and sesame oil in a bowl.","Heat 1 tbsp oil in a wok over the highest heat. Fry garlic and chillies <strong>30 seconds</strong>. Add beef and stir-fry 3–4 minutes.","Pour in the sauce. Toss and fry 1 more minute until glossy.","Remove from heat. Fold in Thai basil — it wilts from residual heat.","Fry eggs in oil until whites are crispy-edged and yolks are runny. Serve beef topped with egg."], tip:"<strong>Chef's tip:</strong> The crispy fried egg defines the dish. High heat and plenty of oil create the lacey edges." },
+  { emoji:"🥩", protein:"Beef", name:"Skirt Steak Chimichurri with Griddled Broccolini", tagline:"Skirt steak — deeply flavoured and quick-cooking — with Argentina's finest condiment and charred broccolini.", stats:[{v:"40g",l:"Protein"},{v:"460",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"400g",name:"Skirt steak"},{qty:"1 large bunch",name:"Flat-leaf parsley"},{qty:"4 cloves",name:"Garlic"},{qty:"2 tbsp",name:"Red wine vinegar"},{qty:"½ tsp",name:"Chilli flakes"},{qty:"½ tsp",name:"Dried oregano"},{qty:"5 tbsp",name:"Olive oil"},{qty:"200g",name:"Broccolini, trimmed"},{qty:"½ tsp",name:"Lemon zest"}], steps:["Make chimichurri: finely chop parsley and garlic. Mix with vinegar, chilli flakes, oregano, 4 tbsp olive oil, salt and pepper.","Season skirt steak. Heat a griddle pan until smoking. Cook steak <strong>2–3 minutes per side</strong>.","Rest the steak for 5 minutes, then slice thinly <strong>against the grain</strong>.","Toss broccolini with remaining olive oil and lemon zest. Griddle 3–4 minutes until charred.","Serve steak slices alongside broccolini, chimichurri spooned over generously."], tip:"<strong>Chef's tip:</strong> Slicing against the grain is critical with skirt steak — long muscle fibres make it chewy if you don't." },
+  { emoji:"🥩", protein:"Beef", name:"Malaysian Beef Rendang with Cauliflower Rice", tagline:"A deeply spiced slow-cooked Malaysian dry curry where the beef becomes mahogany-coloured and intensely flavoured.", stats:[{v:"42g",l:"Protein"},{v:"520",l:"Calories"},{v:"11g",l:"Net Carbs"},{v:"2 hrs",l:"Time"}], ingredients:[{qty:"700g",name:"Beef chuck, cut into 4cm cubes"},{qty:"400ml",name:"Coconut milk"},{qty:"3 stalks",name:"Lemongrass, bruised"},{qty:"5",name:"Kaffir lime leaves"},{qty:"3 tbsp",name:"Rendang paste (jar)"},{qty:"1 tbsp",name:"Coconut oil"},{qty:"1 tsp",name:"Ground turmeric"},{qty:"½ head",name:"Cauliflower, grated to rice"},{qty:"2 tbsp",name:"Desiccated coconut, toasted"}], steps:["Heat coconut oil in a wide heavy pan. Fry rendang paste 2 minutes until fragrant.","Add beef and coat in paste. Cook stirring 5 minutes until sealed.","Add coconut milk, lemongrass, lime leaves, and turmeric. Bring to a simmer.","Cook uncovered on low-medium heat for <strong>1.5–2 hours</strong>, stirring occasionally, until the coconut milk reduces and beef is coated in a thick dark sauce.","Serve on herbed cauliflower rice. Scatter with toasted coconut."], tip:"<strong>Chef's tip:</strong> Rendang is done when the oil separates from the paste and the beef fries rather than simmers." },
+  { emoji:"🐟", protein:"Salmon", name:"Miso-Glazed Salmon with Cucumber & Sesame Salad", tagline:"Umami-rich miso caramelised under the grill, with a fresh cucumber salad in rice vinegar and toasted sesame.", stats:[{v:"38g",l:"Protein"},{v:"430",l:"Calories"},{v:"9g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 × 180g",name:"Salmon fillets, skin-on"},{qty:"2 tbsp",name:"White miso paste"},{qty:"1 tbsp",name:"Soy sauce"},{qty:"1 tsp",name:"Sesame oil"},{qty:"1 tsp",name:"Rice wine vinegar"},{qty:"½",name:"Cucumber, thinly sliced"},{qty:"2 tsp",name:"Toasted sesame seeds"},{qty:"2",name:"Spring onions, sliced"},{qty:"1 tsp",name:"Grated fresh ginger"}], steps:["Preheat grill to high. Mix miso paste, soy sauce, and ginger into a thick glaze.","Pat salmon dry. Place skin-side down on a lined tray. <strong>Spread the miso glaze generously</strong> over the top.","Grill <strong>8–10 minutes</strong> until glaze is caramelised and slightly charred. Salmon should flake easily.","Combine cucumber, spring onions, sesame oil, rice vinegar, and sesame seeds. Toss and season.","Plate the salad and rest salmon on top. Finish with extra sesame seeds."], tip:"<strong>Chef's tip:</strong> Watch closely after 6 minutes — miso burns quickly due to natural sugars." },
+  { emoji:"🐟", protein:"Salmon", name:"Pesto-Baked Salmon with Cherry Tomatoes & Courgette", tagline:"One-tray salmon fillets smothered in basil pesto, roasted alongside burst tomatoes and tender courgette.", stats:[{v:"40g",l:"Protein"},{v:"460",l:"Calories"},{v:"7g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"2 × 180g",name:"Salmon fillets"},{qty:"3 tbsp",name:"Basil pesto (jar)"},{qty:"200g",name:"Cherry tomatoes"},{qty:"2",name:"Courgettes, sliced"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 cloves",name:"Garlic, crushed"},{qty:"½",name:"Lemon, sliced"},{qty:"1 tsp",name:"Dried Italian herbs"},{qty:"Handful",name:"Fresh basil to serve"}], steps:["Preheat oven to 200°C. Toss courgette and tomatoes with olive oil, garlic, and herbs. Spread on a large baking tray.","Roast vegetables <strong>10 minutes</strong>. Push aside to make space, nestle salmon fillets in.","Spoon pesto generously over salmon and lay a lemon slice on each. Roast a further <strong>12–15 minutes</strong>.","The salmon should be just cooked through — opaque but still slightly glossy in the centre.","Serve with scattered fresh basil and pan juices spooned over."], tip:"<strong>Chef's tip:</strong> Don't overcook salmon. Pull it when the centre still looks just slightly underdone." },
+  { emoji:"🐟", protein:"Sea Bass", name:"Pan-Fried Sea Bass with Brown Butter, Capers & Asparagus", tagline:"Crispy-skinned sea bass in a classic French brown butter and caper sauce with roasted asparagus.", stats:[{v:"36g",l:"Protein"},{v:"380",l:"Calories"},{v:"4g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 × 200g",name:"Sea bass fillets, skin-on"},{qty:"2 tbsp",name:"Unsalted butter"},{qty:"2 tbsp",name:"Capers, drained"},{qty:"1",name:"Lemon, juice and zest"},{qty:"200g",name:"Asparagus, trimmed"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Fresh flat-leaf parsley"},{qty:"½ tsp",name:"Salt"},{qty:"¼ tsp",name:"White pepper"}], steps:["Roast asparagus with 1 tbsp olive oil at 200°C for <strong>10–12 minutes</strong> until tender.","Score sea bass skin 3 times. Season well. Heat oil in a non-stick pan over medium-high.","Cook skin-side down. Press gently for 30 seconds. Cook <strong>4 minutes</strong> skin-side, flip and cook 1 minute more.","Remove fish. Melt butter in the same pan until golden brown and nutty. Add capers. Off heat, add lemon juice and parsley.","Plate asparagus, lay fish on top, spoon brown butter over. Finish with lemon zest."], tip:"<strong>Chef's tip:</strong> The difference between brown butter and burnt butter is about 30 seconds — smell it, don't just watch it." },
+  { emoji:"🐟", protein:"Tuna", name:"Seared Tuna Steak with Niçoise-Style Salad", tagline:"Rare seared yellowfin tuna on a bed of green beans, jammy eggs, olives, and anchovies.", stats:[{v:"46g",l:"Protein"},{v:"420",l:"Calories"},{v:"8g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 × 200g",name:"Yellowfin tuna steaks"},{qty:"3",name:"Large eggs"},{qty:"150g",name:"Green beans, trimmed"},{qty:"50g",name:"Kalamata olives"},{qty:"6",name:"Anchovy fillets"},{qty:"2 tbsp",name:"Olive oil"},{qty:"1 tbsp",name:"Red wine vinegar"},{qty:"1 tsp",name:"Dijon mustard"},{qty:"1 tbsp",name:"Capers"}], steps:["Boil eggs exactly <strong>7 minutes</strong> for a jammy yolk. Cool in cold water, peel, and halve.","Blanch green beans in salted boiling water for 3 minutes. Drain and refresh in cold water.","Whisk olive oil, red wine vinegar, Dijon, capers, and seasoning into a dressing.","Season tuna steaks. Heat a dry pan or griddle until smoking. Sear tuna <strong>60–90 seconds per side</strong>.","Arrange green beans, olives, eggs, and anchovies on plates. Slice tuna and lay on top. Drizzle with caper dressing."], tip:"<strong>Chef's tip:</strong> Tuna is meant to be eaten rare — grey all the way through will be dry and disappointing." },
+  { emoji:"🐟", protein:"Cod", name:"Za'atar Spiced Cod with Roasted Cauliflower & Tahini", tagline:"Fragrant za'atar-crusted cod on golden roasted cauliflower, finished with a lemony tahini drizzle.", stats:[{v:"38g",l:"Protein"},{v:"390",l:"Calories"},{v:"13g",l:"Net Carbs"},{v:"35 min",l:"Time"}], ingredients:[{qty:"2 × 180g",name:"Thick cod fillets"},{qty:"2 tbsp",name:"Za'atar spice blend"},{qty:"½ head",name:"Cauliflower, cut into florets"},{qty:"3 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Tahini"},{qty:"1",name:"Lemon, juiced"},{qty:"1 clove",name:"Garlic, minced"},{qty:"2 tbsp",name:"Water"},{qty:"Handful",name:"Fresh coriander"}], steps:["Preheat oven to 210°C. Toss cauliflower with 2 tbsp olive oil, salt, pepper. Roast <strong>25–30 minutes</strong> until golden.","Mix za'atar with 1 tbsp olive oil. Pat cod dry and coat the top and sides.","Whisk tahini, lemon juice, garlic, and water until smooth. Season with salt.","Pan-fry cod za'atar-side down over medium-high heat for <strong>4 minutes</strong>. Flip carefully and cook 3 more minutes.","Plate roasted cauliflower, lay cod on top, drizzle generously with tahini sauce. Scatter with coriander."], tip:"<strong>Chef's tip:</strong> Thick cod holds together in the pan. Thin fillets need only 2–3 minutes per side." },
+  { emoji:"🐟", protein:"Mackerel", name:"Grilled Mackerel with Gremolata & Shaved Fennel", tagline:"Oily, rich mackerel fillets grilled crisp, brightened with a zingy lemon-parsley gremolata and shaved fennel salad.", stats:[{v:"34g",l:"Protein"},{v:"420",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"4",name:"Mackerel fillets"},{qty:"1",name:"Lemon, zested and juiced"},{qty:"3 tbsp",name:"Flat-leaf parsley, finely chopped"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"1 bulb",name:"Fennel, thinly shaved"},{qty:"1 tbsp",name:"Olive oil"},{qty:"1 tbsp",name:"Cider vinegar"},{qty:"Fennel fronds",name:"From bulb, to garnish"},{qty:"Pinch",name:"Chilli flakes"}], steps:["Make gremolata: combine lemon zest, parsley, garlic, a pinch of salt and chilli flakes.","Dress shaved fennel with olive oil, cider vinegar, lemon juice, and fennel fronds. Set aside.","Score mackerel skin 2–3 times. Season well. Place skin-side up under a very hot grill.","Grill <strong>4–5 minutes</strong> without turning — mackerel is thin enough to cook through from one side.","Plate fennel salad, lay mackerel skin-side up on top, and spoon gremolata over generously."], tip:"<strong>Chef's tip:</strong> Mackerel is affordable, sustainable, and arguably more flavourful than salmon." },
+  { emoji:"🐟", protein:"Trout", name:"Baked Rainbow Trout with Dill, Lemon & Caper Butter", tagline:"Whole rainbow trout baked in foil with lemon, dill, and a melting caper butter — simple and elegant.", stats:[{v:"40g",l:"Protein"},{v:"400",l:"Calories"},{v:"2g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"2",name:"Whole rainbow trout, gutted"},{qty:"2 tbsp",name:"Unsalted butter, softened"},{qty:"1 tbsp",name:"Capers, chopped"},{qty:"1",name:"Lemon, sliced"},{qty:"4 sprigs",name:"Fresh dill"},{qty:"2 cloves",name:"Garlic, sliced"},{qty:"1 tbsp",name:"Olive oil"},{qty:"Salt and pepper",name:"To season"},{qty:"1 tbsp",name:"White wine (optional)"}], steps:["Preheat oven to 200°C. Mix softened butter with chopped capers and a pinch of dill. Season.","Place each trout on a large piece of foil. Season inside the cavity. Stuff with lemon slices, dill, and garlic.","Spread caper butter inside and over the top. Drizzle with olive oil and white wine if using.","Seal foil tightly into a parcel. Bake <strong>20–25 minutes</strong> — fish should flake easily when opened.","Open the parcel at the table. Serve with buttery juices spooned over."], tip:"<strong>Chef's tip:</strong> The foil parcel traps steam and keeps the fish incredibly moist. Don't open it early." },
+  { emoji:"🐟", protein:"Salmon", name:"Salmon Teriyaki with Pak Choi & Shiitake Mushrooms", tagline:"Sticky homemade teriyaki salmon with sesame-dressed pak choi and meaty shiitake mushrooms.", stats:[{v:"40g",l:"Protein"},{v:"450",l:"Calories"},{v:"12g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 × 180g",name:"Salmon fillets, skin-on"},{qty:"3 tbsp",name:"Soy sauce"},{qty:"2 tbsp",name:"Mirin"},{qty:"1 tbsp",name:"Sake or dry sherry"},{qty:"1 tsp",name:"Honey"},{qty:"150g",name:"Shiitake mushrooms, stems removed"},{qty:"2",name:"Pak choi, halved lengthways"},{qty:"1 tbsp",name:"Sesame oil"},{qty:"1 tsp",name:"Toasted sesame seeds"}], steps:["Make teriyaki sauce: combine soy, mirin, sake, and honey. Simmer <strong>3 minutes</strong> until slightly thickened. Reserve half.","Heat a non-stick pan over medium-high. Place salmon skin-side down. Cook <strong>4 minutes</strong>, flip, brush with teriyaki sauce. Cook 2 more minutes.","Heat sesame oil in a separate pan. Sear shiitake cut-side down for 3 minutes.","Add pak choi cut-side down. Cook 2 minutes, flip, add reserved teriyaki sauce and 1 tbsp water. Cover and steam 1 minute.","Plate pak choi and mushrooms. Lay salmon on top, glaze with remaining sauce, scatter sesame seeds."], tip:"<strong>Chef's tip:</strong> Salmon skin needs patience — resist moving it. After 4 minutes it releases naturally and is perfectly crisp." },
+  { emoji:"🍗", protein:"Chicken", name:"Harissa Chicken Thighs with Roasted Courgette", tagline:"Bone-in chicken thighs marinated in smoky harissa and lemon, roasted alongside tender courgette rounds.", stats:[{v:"40g",l:"Protein"},{v:"390",l:"Calories"},{v:"6g",l:"Net Carbs"},{v:"45 min",l:"Time"}], ingredients:[{qty:"4",name:"Chicken thighs, bone-in, skin-on"},{qty:"2 tbsp",name:"Rose harissa paste"},{qty:"1",name:"Lemon, zested and juiced"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"2",name:"Courgettes, sliced into rounds"},{qty:"1 tsp",name:"Cumin seeds"},{qty:"½ tsp",name:"Sea salt"},{qty:"2 tbsp",name:"Fresh flat-leaf parsley"}], steps:["Preheat oven to 200°C. Mix harissa, lemon zest and juice, garlic, and 1 tbsp oil. Score thighs and rub marinade all over.","Roast thighs skin-side up for <strong>15 minutes</strong> alone.","Toss courgette with remaining oil, cumin seeds, and salt. Add to the tin and roast a further <strong>20–25 minutes</strong>.","Check chicken reaches 75°C internally. Rest 5 minutes.","Scatter with parsley and serve from the tin."], tip:"<strong>Chef's tip:</strong> Space the courgettes out — crowding causes steaming instead of roasting." },
+  { emoji:"🍗", protein:"Chicken", name:"Chicken Caesar with Griddled Chicken & Parmesan Crisps", tagline:"Juicy griddled chicken on romaine with an anchovy-rich Caesar dressing and shatteringly crisp Parmesan wafers.", stats:[{v:"44g",l:"Protein"},{v:"440",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"2",name:"Chicken breasts, butterflied"},{qty:"2 heads",name:"Romaine lettuce, leaves separated"},{qty:"50g",name:"Parmesan, finely grated"},{qty:"4",name:"Anchovy fillets"},{qty:"1 clove",name:"Garlic"},{qty:"2 tbsp",name:"Mayonnaise"},{qty:"1 tbsp",name:"Lemon juice"},{qty:"1 tsp",name:"Worcestershire sauce"},{qty:"1 tbsp",name:"Olive oil"}], steps:["For Parmesan crisps: make small mounds of grated Parmesan on baking parchment. Bake at 200°C for <strong>5–6 minutes</strong> until golden. Cool completely.","Make dressing: pound anchovies and garlic to a paste. Mix with mayo, lemon juice, and Worcestershire. Thin with cold water. Season.","Griddle butterflied chicken over medium-high for <strong>4–5 minutes per side</strong>. Rest and slice.","Toss lettuce with most of the dressing. Arrange on plates.","Top with sliced chicken, break Parmesan crisps over, drizzle with remaining dressing."], tip:"<strong>Chef's tip:</strong> Butterflying the chicken (slicing it open to lay flat) cooks it faster and keeps it juicy." },
+  { emoji:"🍗", protein:"Chicken", name:"Lemon & Herb Spatchcock Chicken with Roasted Garlic", tagline:"A whole chicken spatchcocked and roasted in 45 minutes — herb butter under the skin, roasted garlic alongside.", stats:[{v:"48g",l:"Protein"},{v:"510",l:"Calories"},{v:"3g",l:"Net Carbs"},{v:"55 min",l:"Time"}], ingredients:[{qty:"1 × 1.5kg",name:"Whole chicken, spatchcocked"},{qty:"3 tbsp",name:"Unsalted butter, softened"},{qty:"3 cloves",name:"Garlic, minced"},{qty:"2 tbsp",name:"Fresh thyme leaves"},{qty:"2 tbsp",name:"Fresh rosemary, chopped"},{qty:"1",name:"Lemon, zested and halved"},{qty:"1 head",name:"Garlic, whole, top cut off"},{qty:"2 tbsp",name:"Olive oil"},{qty:"Salt and pepper",name:"To season"}], steps:["Preheat oven to 220°C. Mix butter with minced garlic, thyme, rosemary, and lemon zest. Season.","Slide fingers under the chicken skin over breast and thighs. Push herb butter underneath and spread evenly.","Rub skin with olive oil and season. Place halved lemon and whole garlic head (drizzled with oil) in the tin.","Roast for <strong>40–45 minutes</strong> until skin is golden and juices run clear (75°C at the thigh).","Rest 10 minutes before carving. Squeeze the softened roasted garlic over the meat."], tip:"<strong>Chef's tip:</strong> Spatchcocking reduces roasting time by a third and results in far crispier skin all over." },
+  { emoji:"🍗", protein:"Chicken", name:"Chicken Tikka with Roasted Cauliflower & Raita", tagline:"Marinated in spiced yoghurt and grilled until charred, paired with cumin-roasted cauliflower and cooling raita.", stats:[{v:"42g",l:"Protein"},{v:"420",l:"Calories"},{v:"10g",l:"Net Carbs"},{v:"35 min",l:"Time"}], ingredients:[{qty:"600g",name:"Chicken thighs, boneless and skinless"},{qty:"150g",name:"Full-fat Greek yoghurt"},{qty:"2 tbsp",name:"Tikka masala paste"},{qty:"1 tsp",name:"Ground coriander"},{qty:"½ head",name:"Cauliflower, cut into florets"},{qty:"1 tsp",name:"Cumin seeds"},{qty:"2 tbsp",name:"Olive oil"},{qty:"½",name:"Cucumber, grated"},{qty:"2 tbsp",name:"Fresh mint, chopped"}], steps:["Mix yoghurt with tikka paste and coriander. Coat chicken and marinate at least 1 hour.","Preheat oven to 220°C. Toss cauliflower with olive oil, cumin seeds, and salt. Roast <strong>25 minutes</strong> until golden.","Lay chicken flat on a rack over a baking tray. Roast at 220°C for <strong>20–22 minutes</strong>, turning once.","Make raita: mix remaining yoghurt with squeezed cucumber, mint, and salt.","Serve chicken alongside roasted cauliflower with raita to spoon over."], tip:"<strong>Chef's tip:</strong> The yoghurt marinade tenderises the chicken and creates the characteristic charred spots." },
+  { emoji:"🍗", protein:"Chicken", name:"Chicken Piccata with Wilted Cavolo Nero", tagline:"Thin chicken escalopes in a sharp, briny lemon and caper butter sauce — a Milanese classic in under 20 minutes.", stats:[{v:"40g",l:"Protein"},{v:"380",l:"Calories"},{v:"4g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 large",name:"Chicken breasts, halved horizontally"},{qty:"2 tbsp",name:"Capers, drained"},{qty:"1",name:"Lemon, juice and zest"},{qty:"3 tbsp",name:"Unsalted butter"},{qty:"150ml",name:"Chicken stock"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"200g",name:"Cavolo nero, stems removed"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Fresh parsley, chopped"}], steps:["Bash chicken pieces between cling film to an even <strong>1cm thickness</strong>. Season.","Heat olive oil over medium-high. Cook chicken <strong>3 minutes per side</strong> until golden. Remove.","Cook garlic 30 seconds. Add stock and lemon juice; simmer 2 minutes. Swirl in butter to gloss. Add capers.","Blanch cavolo nero in salted boiling water for 2 minutes. Drain.","Return chicken to pan to warm through. Plate on cavolo nero, spoon sauce over, finish with lemon zest and parsley."], tip:"<strong>Chef's tip:</strong> Bashing the chicken to an even thickness is the most important step." },
+  { emoji:"🍗", protein:"Chicken", name:"Peruvian Chicken Thighs with Aji Verde Sauce", tagline:"Garlicky cumin-marinated roasted chicken with a vibrant green jalapeño and coriander sauce.", stats:[{v:"42g",l:"Protein"},{v:"460",l:"Calories"},{v:"4g",l:"Net Carbs"},{v:"50 min",l:"Time"}], ingredients:[{qty:"6",name:"Chicken thighs, bone-in"},{qty:"4 cloves",name:"Garlic"},{qty:"2 tsp",name:"Ground cumin"},{qty:"1 tsp",name:"Smoked paprika"},{qty:"2 tbsp",name:"Olive oil"},{qty:"1",name:"Jalapeño, deseeded"},{qty:"Large bunch",name:"Fresh coriander"},{qty:"3 tbsp",name:"Mayonnaise"},{qty:"1 tbsp",name:"Lime juice"}], steps:["Blend 3 garlic cloves, cumin, paprika, olive oil, salt and pepper into a paste. Score chicken and rub paste all over.","Marinate at least 30 minutes at room temperature.","Roast at 210°C for <strong>35–40 minutes</strong> until skin is deeply golden and internal temp is 75°C.","Make aji verde: blend jalapeño, coriander, mayonnaise, 1 garlic clove, lime juice, and 1 tbsp water until smooth. Season.","Rest chicken 5 minutes. Serve with aji verde drizzled over or alongside."], tip:"<strong>Chef's tip:</strong> Make double aji verde — it keeps 3 days in the fridge and improves everything it touches." },
+  { emoji:"🍗", protein:"Chicken", name:"Chicken Shawarma with Fattoush & Hummus", tagline:"Heavily spiced chicken thighs griddled until charred, served with a bright fattoush salad and generous hummus.", stats:[{v:"44g",l:"Protein"},{v:"480",l:"Calories"},{v:"12g",l:"Net Carbs"},{v:"35 min",l:"Time"}], ingredients:[{qty:"600g",name:"Chicken thighs, boneless"},{qty:"2 tsp",name:"Ground cumin"},{qty:"1 tsp",name:"Ground coriander"},{qty:"1 tsp",name:"Turmeric"},{qty:"½ tsp",name:"Cinnamon"},{qty:"2 tbsp",name:"Olive oil"},{qty:"150g",name:"Hummus (good quality)"},{qty:"1",name:"Cucumber, diced"},{qty:"2",name:"Tomatoes, diced"}], steps:["Mix cumin, coriander, turmeric, cinnamon, olive oil, salt and pepper. Coat chicken thoroughly. Marinate 20 minutes minimum.","Make a quick fattoush: combine cucumber, tomatoes, red onion, lemon juice, olive oil, and fresh mint. Season.","Heat a griddle pan until very hot. Cook chicken thighs <strong>5–6 minutes per side</strong> until charred.","Rest 5 minutes, then slice.","Spread hummus across a plate. Top with sliced chicken and fattoush alongside."], tip:"<strong>Chef's tip:</strong> High heat and dark charring is the key — don't shy from darker bits." },
+  { emoji:"🍗", protein:"Chicken", name:"Tarragon Cream Chicken with French Green Beans", tagline:"Chicken breasts in a silky tarragon and crème fraîche sauce with crisp haricots verts — a French bistro classic.", stats:[{v:"42g",l:"Protein"},{v:"430",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"2 large",name:"Chicken breasts"},{qty:"150ml",name:"Chicken stock"},{qty:"3 tbsp",name:"Crème fraîche"},{qty:"2 tbsp",name:"Dijon mustard"},{qty:"1",name:"Shallot, finely diced"},{qty:"1 clove",name:"Garlic, minced"},{qty:"2 tbsp",name:"Fresh tarragon, chopped"},{qty:"200g",name:"Haricot verts (fine green beans)"},{qty:"1 tbsp",name:"Unsalted butter"}], steps:["Season chicken breasts. Pan-fry in butter over medium heat <strong>5–6 minutes per side</strong> until golden. Remove and rest.","In same pan, cook shallot until soft (~3 min). Add garlic 1 minute. Add stock and scrape up caramelised bits.","Simmer stock 3 minutes to reduce. Stir in crème fraîche and Dijon. Simmer 2 more minutes. Stir in tarragon.","Blanch green beans in salted boiling water for 3 minutes. Drain.","Slice chicken, return to sauce briefly. Serve on a bed of green beans."], tip:"<strong>Chef's tip:</strong> Crème fraîche is far more stable than cream in sauces and won't split when reduced." },
+  { emoji:"🥚", protein:"Eggs & Halloumi", name:"Shakshuka with Halloumi & Dukkah", tagline:"Eggs poached in a rich spiced tomato sauce, topped with golden halloumi and crunchy dukkah.", stats:[{v:"32g",l:"Protein"},{v:"420",l:"Calories"},{v:"14g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"4 large",name:"Free-range eggs"},{qty:"200g",name:"Halloumi, sliced 1cm thick"},{qty:"1 × 400g",name:"Tin chopped tomatoes"},{qty:"2",name:"Red peppers, diced"},{qty:"1",name:"Red onion, sliced"},{qty:"3 cloves",name:"Garlic, minced"},{qty:"1½ tsp",name:"Smoked paprika"},{qty:"1 tsp",name:"Ground cumin"},{qty:"2 tbsp",name:"Dukkah"}], steps:["Cook onion and peppers in olive oil for 8 minutes. Add garlic, paprika, and cumin; cook 1 minute.","Add tomatoes, season. Simmer <strong>10 minutes</strong> until thickened.","Make 4 wells in the sauce and crack in eggs. Cover and cook on low <strong>5–7 minutes</strong> until whites set but yolks are runny.","Dry-fry halloumi for 1–2 minutes per side until golden.","Serve from the pan, halloumi on top, dukkah scattered over."], tip:"<strong>Chef's tip:</strong> Crack eggs into cups first so you can add them all to the wells quickly and evenly." },
+  { emoji:"🧀", protein:"Eggs & Feta", name:"Green Goddess Frittata with Feta & Sun-Dried Tomatoes", tagline:"A vibrant oven-baked frittata packed with spinach, courgette, feta, and herbs — a complete protein-rich dinner.", stats:[{v:"30g",l:"Protein"},{v:"380",l:"Calories"},{v:"7g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"6 large",name:"Eggs"},{qty:"100g",name:"Feta, crumbled"},{qty:"100g",name:"Baby spinach"},{qty:"1",name:"Courgette, grated and squeezed dry"},{qty:"6",name:"Sun-dried tomatoes, chopped"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"2 tbsp",name:"Fresh basil"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Milk or cream"}], steps:["Preheat oven to 190°C. Whisk eggs with milk and season.","Heat olive oil in an oven-safe frying pan. Cook garlic 1 minute. Add courgette, cook 3 minutes. Wilt in spinach.","Add sun-dried tomatoes and basil. Pour egg mixture over, distributing vegetables evenly.","Scatter feta over the top. Cook on hob <strong>2 minutes</strong> until edges just set, then transfer to oven.","Bake <strong>12–15 minutes</strong> until just set with a slight wobble. Rest 5 minutes before slicing."], tip:"<strong>Chef's tip:</strong> Squeezing every drop of moisture from the courgette is essential — a watery frittata never sets properly." },
+  { emoji:"🥚", protein:"Eggs & Bacon", name:"Smoked Bacon & Mushroom Baked Eggs with Dressed Salad", tagline:"Individual baked eggs nestled in smoked bacon and wild mushrooms, with a crisp dressed leaf salad alongside.", stats:[{v:"30g",l:"Protein"},{v:"360",l:"Calories"},{v:"4g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"4 large",name:"Eggs"},{qty:"6 rashers",name:"Smoked streaky bacon"},{qty:"150g",name:"Mixed wild mushrooms"},{qty:"1 clove",name:"Garlic, minced"},{qty:"2 tbsp",name:"Double cream"},{qty:"50g",name:"Gruyère, grated"},{qty:"60g",name:"Mixed salad leaves"},{qty:"1 tsp",name:"Dijon mustard"},{qty:"1 tbsp",name:"Red wine vinegar"}], steps:["Preheat oven to 200°C. Fry bacon until crispy; break into pieces. Cook mushrooms and garlic in bacon fat for 4 minutes.","Divide bacon and mushrooms between 2 ramekins or a small baking dish.","Pour 1 tbsp cream into each. Crack 2 eggs per ramekin on top. Season.","Scatter cheese over. Bake <strong>12–15 minutes</strong> until whites are set and yolk is still runny.","Dress salad leaves with Dijon, vinegar, olive oil, and salt. Serve alongside the ramekins."], tip:"<strong>Chef's tip:</strong> The cream prevents egg whites from going rubbery at the edges — don't skip it." },
+  { emoji:"🫘", protein:"Turkey", name:"Turkey & Feta Stuffed Peppers with Tomato Sauce", tagline:"Colourful peppers stuffed with seasoned minced turkey, feta, and herbs, baked in a simple tomato sauce.", stats:[{v:"38g",l:"Protein"},{v:"380",l:"Calories"},{v:"14g",l:"Net Carbs"},{v:"45 min",l:"Time"}], ingredients:[{qty:"4 large",name:"Bell peppers, halved and deseeded"},{qty:"400g",name:"Minced turkey"},{qty:"80g",name:"Feta, crumbled"},{qty:"1 × 400g",name:"Tin chopped tomatoes"},{qty:"1",name:"Onion, finely diced"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"1 tsp",name:"Dried oregano"},{qty:"½ tsp",name:"Smoked paprika"},{qty:"2 tbsp",name:"Fresh parsley"}], steps:["Preheat oven to 190°C. Cook onion in olive oil until soft. Add garlic, paprika, and half the oregano for 1 minute.","Add turkey mince, breaking it up. Cook until no longer pink (~5 min). Season well. Remove from heat, stir in feta.","Simmer tinned tomatoes with remaining oregano and seasoning for 5 minutes. Pour into base of a baking dish.","Pack pepper halves generously with turkey mixture. Nestle into the tomato sauce.","Cover with foil and bake <strong>30 minutes</strong>. Uncover and bake 10 more minutes. Scatter with parsley."], tip:"<strong>Chef's tip:</strong> Turkey mince is leaner than beef and needs more seasoning — the salty feta helps keep the filling moist." },
+  { emoji:"🦐", protein:"Prawns", name:"Chilli Garlic Prawns with Cauliflower Rice", tagline:"King prawns blistered in a punchy chilli-garlic oil, served on herbed cauliflower rice.", stats:[{v:"36g",l:"Protein"},{v:"340",l:"Calories"},{v:"8g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"400g",name:"Raw king prawns, peeled"},{qty:"4 cloves",name:"Garlic, thinly sliced"},{qty:"2",name:"Red chillies, sliced"},{qty:"3 tbsp",name:"Olive oil"},{qty:"1",name:"Lemon, halved"},{qty:"½ head",name:"Cauliflower, grated to rice"},{qty:"2 tbsp",name:"Fresh coriander, chopped"},{qty:"1 tbsp",name:"Unsalted butter"},{qty:"½ tsp",name:"Chilli flakes"}], steps:["Grate cauliflower. Cook in butter 4–5 minutes stirring. Season and stir in coriander. Keep warm.","Pat prawns completely dry. Heat olive oil in a wok over high heat.","Add garlic and chillies. Stir-fry <strong>30 seconds</strong> until fragrant.","Add prawns in a single layer. Cook <strong>1–2 minutes per side</strong> until pink and curled.","Squeeze over lemon. Serve immediately over cauliflower rice."], tip:"<strong>Chef's tip:</strong> Dry prawns = proper sear. Any moisture causes steaming rather than blistering." },
+  { emoji:"🦐", protein:"Prawns", name:"Prawn Saganaki with Feta & Tomatoes", tagline:"A beloved Greek taverna dish — juicy prawns baked in a spiced tomato sauce under a crown of melting feta.", stats:[{v:"34g",l:"Protein"},{v:"360",l:"Calories"},{v:"11g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"400g",name:"Raw king prawns, peeled"},{qty:"150g",name:"Feta, crumbled"},{qty:"1 × 400g",name:"Tin chopped tomatoes"},{qty:"1",name:"Red onion, diced"},{qty:"3 cloves",name:"Garlic, minced"},{qty:"1 tsp",name:"Dried oregano"},{qty:"½ tsp",name:"Chilli flakes"},{qty:"2 tbsp",name:"Olive oil"},{qty:"Handful",name:"Fresh dill or parsley"}], steps:["Preheat oven to 200°C. Cook onion in olive oil 5 minutes. Add garlic, chilli flakes, and oregano for 1 minute.","Add tinned tomatoes. Simmer <strong>8 minutes</strong> until thickened. Season.","Stir in the raw prawns. Transfer to an oven-safe dish.","Scatter feta generously over the top. Bake <strong>12–15 minutes</strong> until prawns are pink and feta is golden.","Scatter with fresh dill and serve from the dish."], tip:"<strong>Chef's tip:</strong> Don't pre-cook the prawns before baking — they'll be overcooked by the time the feta has coloured." },
+  { emoji:"🦑", protein:"Squid", name:"Chargrilled Squid with Chorizo, Rocket & Lemon", tagline:"Tender squid blistered on a screaming-hot griddle with sliced chorizo, peppery rocket, and lemon.", stats:[{v:"34g",l:"Protein"},{v:"360",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"15 min",l:"Time"}], ingredients:[{qty:"500g",name:"Squid, cleaned (bodies scored)"},{qty:"100g",name:"Chorizo, sliced"},{qty:"60g",name:"Wild rocket"},{qty:"1",name:"Lemon, juice and zest"},{qty:"2 cloves",name:"Garlic, minced"},{qty:"2 tbsp",name:"Olive oil"},{qty:"½ tsp",name:"Smoked paprika"},{qty:"Pinch",name:"Chilli flakes"},{qty:"Fresh parsley",name:"To finish"}], steps:["Score squid bodies in a crosshatch on the inside. Toss squid and tentacles with garlic, olive oil, paprika, and chilli. Season.","Heat a griddle pan until smoking. Fry chorizo slices for 2 minutes until releasing their oil. Remove.","Add squid to the hot griddle in a single layer. Cook <strong>1–2 minutes per side</strong> — it will curl and char.","Remove squid, combine with chorizo, drizzle with lemon juice and zest.","Arrange rocket on plates. Top with squid and chorizo. Finish with parsley."], tip:"<strong>Chef's tip:</strong> Squid is either quick-cooked (1–2 min) or slow-braised (45+ min). Anything in between gives you rubber bands." },
+  { emoji:"🦐", protein:"Scallops", name:"Pan-Seared Scallops with Cauliflower Purée & Pancetta", tagline:"Restaurant-worthy scallops seared golden in seconds, on a silky cauliflower purée with crispy pancetta.", stats:[{v:"32g",l:"Protein"},{v:"380",l:"Calories"},{v:"10g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"12",name:"Large king scallops, dry"},{qty:"6 slices",name:"Pancetta or thin streaky bacon"},{qty:"½ head",name:"Cauliflower, cut into florets"},{qty:"2 tbsp",name:"Unsalted butter"},{qty:"60g",name:"Pea shoots or watercress"},{qty:"1",name:"Lemon, juice and zest"},{qty:"1 tbsp",name:"Olive oil"},{qty:"Salt and white pepper",name:"To season"},{qty:"Micro herbs",name:"To garnish (optional)"}], steps:["Grill or dry-fry pancetta until completely crispy. Drain on kitchen paper.","Steam cauliflower until very soft (~15 min). Blend with butter, salt, and white pepper until silky smooth. Keep warm.","Pat scallops completely dry. Season. Heat a heavy pan over the highest heat until smoking.","Add a tiny bit of oil. Place scallops in — they should sizzle loudly. Cook <strong>60–90 seconds per side</strong> untouched until deeply golden.","Spoon cauliflower purée onto plates, place scallops on top, crumble pancetta over, scatter pea shoots, finish with lemon."], tip:"<strong>Chef's tip:</strong> The most important rule with scallops — bone dry before they hit the pan. A single drop of moisture prevents caramelisation." },
+  { emoji:"🥩", protein:"Lamb", name:"Herb-Crusted Lamb Rack with Roasted Asparagus", tagline:"A show-stopping rack of lamb coated in Dijon and an herb crust, with asparagus and a mint dressing.", stats:[{v:"44g",l:"Protein"},{v:"560",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"50 min",l:"Time"}], ingredients:[{qty:"1 rack",name:"French-trimmed lamb (6–8 cutlets)"},{qty:"2 tbsp",name:"Dijon mustard"},{qty:"3 tbsp",name:"Panko or crushed nuts"},{qty:"2 tbsp",name:"Fresh rosemary, chopped"},{qty:"2 tbsp",name:"Fresh parsley, chopped"},{qty:"250g",name:"Asparagus spears, trimmed"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Fresh mint, chopped"},{qty:"1 tbsp",name:"Lemon juice"}], steps:["Preheat oven to 220°C. Mix breadcrumbs or crushed almonds, rosemary, parsley, and 1 tbsp oil. Season.","Sear lamb rack fat-side down in a hot ovenproof pan for <strong>3 minutes</strong>. Sear other sides briefly.","Brush fat-side with Dijon and press herb crust firmly onto it.","Arrange asparagus in the pan and roast <strong>18–22 minutes</strong> (medium-rare, 58°C internal).","Rest 10 minutes. Mix mint, lemon juice, and 1 tbsp oil for a dressing. Carve into cutlets."], tip:"<strong>Chef's tip:</strong> Swap breadcrumbs for crushed walnuts to reduce carbs further." },
+  { emoji:"🥩", protein:"Lamb", name:"Slow-Cooked Lamb Shoulder with Preserved Lemon & Olives", tagline:"Moroccan-inspired braised lamb shoulder that becomes fall-apart tender after three hours.", stats:[{v:"48g",l:"Protein"},{v:"540",l:"Calories"},{v:"7g",l:"Net Carbs"},{v:"3.5 hrs",l:"Time"}], ingredients:[{qty:"1.2kg",name:"Bone-in lamb shoulder"},{qty:"1",name:"Preserved lemon, skin only, sliced"},{qty:"100g",name:"Green olives, pitted"},{qty:"1",name:"Onion, sliced"},{qty:"4 cloves",name:"Garlic"},{qty:"1 tsp",name:"Ground cumin"},{qty:"1 tsp",name:"Ground coriander"},{qty:"½ tsp",name:"Cinnamon"},{qty:"300ml",name:"Chicken stock"}], steps:["Preheat oven to 170°C. Mix cumin, coriander, and cinnamon with salt. Score the lamb and rub spices all over.","Brown lamb in a casserole dish over high heat — all sides. Remove. Cook onion in same pot until soft.","Return lamb. Add garlic, preserved lemon, olives, and stock.","Cover tightly and braise <strong>3–3.5 hours</strong> until the meat falls from the bone.","Rest uncovered 15 minutes. Scatter with fresh coriander. Serve in the pot."], tip:"<strong>Chef's tip:</strong> Use only the yellow rind of preserved lemon — the rind holds all the intensity." },
+  { emoji:"🥩", protein:"Lamb", name:"Lamb Cutlets with Salsa Verde & Roasted Aubergine", tagline:"Quick-griddled lamb cutlets with a punchy Italian salsa verde and smoky roasted aubergine.", stats:[{v:"40g",l:"Protein"},{v:"480",l:"Calories"},{v:"6g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"8",name:"Lamb cutlets"},{qty:"1 large",name:"Aubergine, sliced into rounds"},{qty:"Large bunch",name:"Flat-leaf parsley"},{qty:"1 tbsp",name:"Capers"},{qty:"2",name:"Anchovy fillets"},{qty:"1 clove",name:"Garlic"},{qty:"1 tbsp",name:"Red wine vinegar"},{qty:"5 tbsp",name:"Olive oil"},{qty:"1 tsp",name:"Dijon mustard"}], steps:["Preheat oven to 200°C. Brush aubergine with olive oil, season, and roast <strong>25 minutes</strong> until golden and tender.","Make salsa verde: blend parsley, capers, anchovies, garlic, vinegar, Dijon, and 4 tbsp olive oil until roughly chopped. Season.","Season cutlets well. Heat a griddle pan until smoking.","Cook cutlets <strong>2–3 minutes per side</strong> for pink and juicy. Rest 3 minutes.","Plate roasted aubergine, rest cutlets on top, and spoon salsa verde generously over."], tip:"<strong>Chef's tip:</strong> Salsa verde keeps a week in the fridge under a thin layer of olive oil. Make double." },
+  { emoji:"🍖", protein:"Pork", name:"Slow-Cooked Pork Belly with Fennel & Apple Slaw", tagline:"Twice-cooked pork belly with crispy crackling alongside a bright crunchy fennel and apple slaw.", stats:[{v:"38g",l:"Protein"},{v:"580",l:"Calories"},{v:"10g",l:"Net Carbs"},{v:"2.5 hrs",l:"Time"}], ingredients:[{qty:"800g",name:"Pork belly, skin scored"},{qty:"1 tbsp",name:"Flaked sea salt (for skin)"},{qty:"1 tsp",name:"Fennel seeds, toasted & crushed"},{qty:"1 tsp",name:"Smoked paprika"},{qty:"1 bulb",name:"Fennel, very thinly sliced"},{qty:"½",name:"Apple, matchstick-cut"},{qty:"2 tbsp",name:"Cider vinegar"},{qty:"1 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Fresh dill, torn"}], steps:["Preheat oven to 160°C. Rub fennel seeds and paprika into the underside. Press sea salt into every score of the skin.","Place skin-side up on a rack. Roast <strong>2 hours</strong> until meat is tender.","Turn oven to 230°C. Roast <strong>20–25 minutes</strong> more until crackling is blistered.","Combine fennel, apple, vinegar, oil, and a pinch of salt. Leave 10 minutes then add dill.","Rest pork 10 minutes. Slice through crackling. Serve with slaw."], tip:"<strong>Chef's tip:</strong> For crackling, dryness is everything. Pat the skin, salt it, and if possible leave uncovered in the fridge overnight." },
+  { emoji:"🍖", protein:"Pork", name:"Pork Tenderloin with Mustard Cream Sauce & Green Beans", tagline:"Lean, elegant pork tenderloin in a Dijon and crème fraîche sauce with crisp haricots verts.", stats:[{v:"42g",l:"Protein"},{v:"400",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"2",name:"Pork tenderloins (~300g each)"},{qty:"3 tbsp",name:"Dijon mustard"},{qty:"150ml",name:"Chicken stock"},{qty:"3 tbsp",name:"Crème fraîche"},{qty:"1",name:"Shallot, finely diced"},{qty:"1 clove",name:"Garlic, minced"},{qty:"200g",name:"Haricot verts (fine green beans)"},{qty:"1 tbsp",name:"Fresh tarragon"},{qty:"1 tbsp",name:"Olive oil"}], steps:["Season tenderloins. Sear in olive oil over medium-high heat, turning, for <strong>8–10 minutes</strong> until golden all over.","Transfer to a 200°C oven for <strong>10 minutes</strong> until internal temp reaches 63°C. Rest 5 minutes.","In same pan, soften shallot and garlic. Add stock and reduce by half. Stir in crème fraîche and Dijon. Simmer 2 minutes.","Blanch green beans in salted boiling water for 3 minutes. Drain.","Slice pork diagonally. Plate on green beans and spoon mustard cream over. Finish with tarragon."], tip:"<strong>Chef's tip:</strong> Pulling pork tenderloin at 63°C (still slightly pink) and resting is the key to keeping it juicy." },
+  { emoji:"🍖", protein:"Pork", name:"Five-Spice Pork Chops with Stir-Fried Savoy Cabbage", tagline:"Thick pork chops rubbed in five-spice and soy, pan-fried and served with a ginger-sesame stir-fried cabbage.", stats:[{v:"44g",l:"Protein"},{v:"440",l:"Calories"},{v:"8g",l:"Net Carbs"},{v:"25 min",l:"Time"}], ingredients:[{qty:"2 × 250g",name:"Thick pork chops, bone-in"},{qty:"1 tsp",name:"Chinese five-spice"},{qty:"2 tbsp",name:"Soy sauce"},{qty:"1 tsp",name:"Sesame oil"},{qty:"½",name:"Savoy cabbage, finely shredded"},{qty:"3 cloves",name:"Garlic, minced"},{qty:"1 tbsp",name:"Grated fresh ginger"},{qty:"1 tbsp",name:"Vegetable oil"},{qty:"1 tsp",name:"Rice wine vinegar"}], steps:["Mix five-spice, soy, and sesame oil. Score chops and rub with the mixture. Leave 15 minutes.","Heat vegetable oil in a large frying pan over medium-high. Sear chops <strong>4 minutes per side</strong> until golden. Rest.","In same pan, stir-fry garlic and ginger for 30 seconds. Add shredded cabbage.","Stir-fry <strong>4–5 minutes</strong> until cabbage is tender but still has some bite. Add rice wine vinegar and a splash of soy.","Plate the cabbage and rest the pork chop alongside."], tip:"<strong>Chef's tip:</strong> Bone-in pork chops have far more flavour — the bone conducts heat differently and the surrounding meat is more marbled." },
+  { emoji:"🍖", protein:"Pork", name:"Italian Fennel Sausage, Cavolo Nero & Cannellini Bake", tagline:"Rustic Italian-style bake with spicy fennel sausages, bitter cavolo nero, and white beans.", stats:[{v:"36g",l:"Protein"},{v:"480",l:"Calories"},{v:"18g",l:"Net Carbs"},{v:"40 min",l:"Time"}], ingredients:[{qty:"6",name:"Italian pork sausages (fennel)"},{qty:"1 × 400g",name:"Tin cannellini beans, drained"},{qty:"1 × 400g",name:"Tin chopped tomatoes"},{qty:"200g",name:"Cavolo nero, stems removed"},{qty:"1",name:"Red onion, diced"},{qty:"4 cloves",name:"Garlic, sliced"},{qty:"1 tsp",name:"Dried chilli flakes"},{qty:"1 tsp",name:"Fennel seeds"},{qty:"2 tbsp",name:"Olive oil"}], steps:["Brown sausages in olive oil in a large casserole, turning, until golden all over. Remove.","Cook onion until soft. Add garlic, chilli flakes, and fennel seeds for 1 minute.","Add tinned tomatoes and beans. Stir. Nestle sausages back in.","Cover and cook on low-medium heat <strong>20 minutes</strong>. Uncover and cook 5 more minutes until sauce thickens.","Wilt cavolo nero into the stew for the final 3 minutes. Serve in the pot."], tip:"<strong>Chef's tip:</strong> Don't prick the sausages — keeping them intact concentrates the flavour and fat." },
+  { emoji:"🦆", protein:"Duck", name:"Duck Breast with Cherry Jus & Savoy Cabbage", tagline:"Perfectly rendered duck breast — the skin lacquered in its own fat — with a glossy red wine and cherry reduction.", stats:[{v:"40g",l:"Protein"},{v:"520",l:"Calories"},{v:"10g",l:"Net Carbs"},{v:"30 min",l:"Time"}], ingredients:[{qty:"2",name:"Duck breasts, skin-on"},{qty:"100ml",name:"Dry red wine"},{qty:"100ml",name:"Chicken stock"},{qty:"80g",name:"Cherries, fresh or frozen, halved"},{qty:"1 tbsp",name:"Balsamic vinegar"},{qty:"½",name:"Savoy cabbage, shredded"},{qty:"1 tbsp",name:"Unsalted butter"},{qty:"1 clove",name:"Garlic"},{qty:"Salt and pepper",name:"To season"}], steps:["Score duck skin in a crosshatch. Season generously. Place skin-side down in a <strong>cold</strong> pan. Turn heat to medium.","Cook skin-side down for <strong>12–15 minutes</strong>, pouring off excess fat. Flip and cook 3–4 minutes more. Remove and rest 8 minutes.","Pour off all but 1 tbsp duck fat. Add wine and reduce by half. Add stock, cherries, and balsamic. Simmer until glossy.","Wilt cabbage in a little duck fat with garlic. Season.","Slice duck. Plate cabbage, lay duck on top, and spoon cherry jus over."], tip:"<strong>Chef's tip:</strong> Starting duck in a cold pan and slowly rendering the fat is the correct technique — not a hot pan." },
+  { emoji:"🦃", protein:"Turkey", name:"Turkey Scaloppini with Lemon, Capers & Broccolini", tagline:"Thin turkey escalopes sautéed golden and served with a piquant lemon-caper pan sauce over charred broccolini.", stats:[{v:"44g",l:"Protein"},{v:"380",l:"Calories"},{v:"5g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"2 × 200g",name:"Turkey breast steaks"},{qty:"2 tbsp",name:"Capers"},{qty:"1",name:"Lemon, juice and zest"},{qty:"150ml",name:"Chicken stock"},{qty:"2 tbsp",name:"Unsalted butter"},{qty:"200g",name:"Broccolini, trimmed"},{qty:"2 tbsp",name:"Olive oil"},{qty:"2 tbsp",name:"Fresh parsley"},{qty:"1 clove",name:"Garlic, minced"}], steps:["Pound turkey steaks between cling film to <strong>1cm thickness</strong>. Season.","Heat olive oil over medium-high. Cook turkey <strong>3 minutes per side</strong> until golden. Remove.","Cook garlic 30 seconds. Add stock and lemon juice; simmer 2 minutes. Stir in butter and capers.","Griddle or pan-fry broccolini with a little oil for 4 minutes until charred.","Return turkey to sauce briefly. Plate on broccolini. Spoon sauce over. Finish with lemon zest and parsley."], tip:"<strong>Chef's tip:</strong> Turkey breast dries out faster than chicken — pounding it ensures even, quick cooking." },
+  { emoji:"🥗", protein:"Chicken", name:"Thai Larb Gai Minced Chicken Salad", tagline:"A vibrant herby minced chicken salad from northern Thailand — lime, fish sauce, toasted rice, and abundant fresh herbs.", stats:[{v:"36g",l:"Protein"},{v:"320",l:"Calories"},{v:"6g",l:"Net Carbs"},{v:"20 min",l:"Time"}], ingredients:[{qty:"500g",name:"Minced chicken"},{qty:"2 tbsp",name:"Fish sauce"},{qty:"2",name:"Limes, juiced"},{qty:"1 tsp",name:"Chilli flakes"},{qty:"1 tbsp",name:"Toasted rice powder"},{qty:"4",name:"Spring onions, sliced"},{qty:"Large bunch",name:"Fresh mint leaves"},{qty:"Large bunch",name:"Fresh coriander"},{qty:"1 head",name:"Baby gem lettuce, leaves separated"}], steps:["Dry-fry 1 tbsp raw rice in a pan until golden, then grind to a rough powder. Set aside.","Heat a pan with no oil. Add minced chicken and cook over high heat, breaking it up, until cooked through and slightly crispy.","Remove from heat. Season with fish sauce, lime juice, and chilli. Toss well.","Add spring onions, mint, coriander, and toasted rice powder. Toss to combine.","Serve spooned into gem lettuce cups and eat immediately."], tip:"<strong>Chef's tip:</strong> The toasted rice powder adds a nutty flavour and subtle crunch that is the dish's defining characteristic." },
+  { emoji:"🐄", protein:"Veal", name:"Veal Ossobuco with Saffron Cauliflower Purée & Gremolata", tagline:"Milanese braised veal shin with saffron cauliflower purée in place of risotto, topped with bright gremolata.", stats:[{v:"46g",l:"Protein"},{v:"520",l:"Calories"},{v:"12g",l:"Net Carbs"},{v:"2.5 hrs",l:"Time"}], ingredients:[{qty:"2",name:"Veal ossobuco (thick shin cross-cuts)"},{qty:"200ml",name:"Dry white wine"},{qty:"200ml",name:"Veal or chicken stock"},{qty:"1 × 400g",name:"Tin chopped tomatoes"},{qty:"1",name:"Onion, diced"},{qty:"2",name:"Carrots, diced"},{qty:"Pinch",name:"Saffron"},{qty:"½ head",name:"Cauliflower"},{qty:"Lemon zest, parsley, garlic",name:"For gremolata"}], steps:["Season and brown ossobuco in olive oil on all sides. Remove. Cook onion and carrot until soft.","Add white wine and reduce by half. Add tomatoes and stock. Return veal.","Braise covered at 160°C for <strong>2 hours</strong> until the meat is tender and leaving the bone.","Steep saffron in 2 tbsp warm water. Steam cauliflower until soft; blend with butter, saffron water, and salt until silky.","Make gremolata: mix finely chopped parsley, lemon zest, and minced garlic. Serve ossobuco on cauliflower purée, topped with gremolata."], tip:"<strong>Chef's tip:</strong> Don't miss the bone marrow — use a small spoon to extract it from the bone. It's the richest part." }
+];
+
+// ── WEEK ROTATION ─────────────────────────────────────────────────────────
+function getMostRecentFriday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day + 2) % 7;
+  d.setDate(d.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function getWeekNumber(friday) {
+  const epoch = new Date(2021, 0, 1);
+  return Math.floor((friday - epoch) / (7 * 24 * 60 * 60 * 1000));
+}
+function seededShuffle(array, seed) {
+  const arr = [...array];
+  let s = seed;
+  const rand = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+function formatDateRange(friday) {
+  const sat = new Date(friday); sat.setDate(sat.getDate() + 1);
+  const nextFri = new Date(friday); nextFri.setDate(nextFri.getDate() + 7);
+  const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return `${fmt(sat)} – ${fmt(nextFri)}`;
+}
+
+const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday","Friday"];
+const friday = getMostRecentFriday(new Date());
+const weekNum = getWeekNumber(friday);
+const shuffled = seededShuffle(ALL_RECIPES, weekNum * 31337);
+
+// State: current 7 meals + remaining pool
+let thisWeek = shuffled.slice(0, 7);
+let pool = shuffled.slice(7); // unused recipes available for swapping
+let swapCounts = [0,0,0,0,0,0,0]; // track how many times each slot has been swapped
+let poolIndex = 0; // cycles through the pool
+
+document.getElementById('weekLabel').textContent = `Week of ${formatDateRange(friday)}`;
+document.getElementById('shoppingNote').textContent = '— Shop Saturday · New menu every Friday · Click any card to view recipe · ↻ to swap a meal';
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('mealGrid');
+  grid.innerHTML = '';
+  thisWeek.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.id = `card-${i}`;
+
+    // ── Day bar ──────────────────────────────────────────────
+    const dayBar = document.createElement('div');
+    dayBar.style.cssText = 'background:#1a1a18;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;';
+
+    const dayLabel = document.createElement('span');
+    dayLabel.style.cssText = 'color:#c9a84c;font-size:9px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;font-family:DM Sans,sans-serif;';
+    dayLabel.textContent = DAYS[i];
+
+    const swapBtn = document.createElement('button');
+    swapBtn.style.cssText = 'background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;';
+    swapBtn.dataset.index = i;
+
+    const swapIcon = document.createElement('span');
+    swapIcon.style.cssText = 'color:#e8694a;font-size:16px;font-weight:900;line-height:1;font-family:sans-serif;';
+    swapIcon.textContent = '↻';
+
+    const swapLabel = document.createElement('span');
+    swapLabel.style.cssText = 'color:#e8694a;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;font-family:DM Sans,sans-serif;';
+    swapLabel.textContent = 'Swap';
+
+    swapBtn.appendChild(swapIcon);
+    swapBtn.appendChild(swapLabel);
+    swapBtn.addEventListener('click', (e) => { e.stopPropagation(); swapMeal(i); });
+
+    dayBar.appendChild(dayLabel);
+    dayBar.appendChild(swapBtn);
+    card.appendChild(dayBar);
+
+    // ── Swap count badge ──────────────────────────────────────
+    const badge = document.createElement('div');
+    badge.className = swapCounts[i] > 0 ? 'swap-count visible' : 'swap-count';
+    if (swapCounts[i] > 0) badge.textContent = swapCounts[i];
+    card.appendChild(badge);
+
+    // ── Rest of card via innerHTML (no conflicting styles) ────
+    const body = document.createElement('div');
+    body.innerHTML = `
+      <div class="card-emoji" data-open="${i}">${m.emoji}</div>
+      <div class="card-body" data-open="${i}">
+        <div class="card-protein-tag">${m.protein}</div>
+        <div class="card-title">${m.name}</div>
+        <div class="card-meta">
+          <span>⏱ ${m.stats[3].v}</span>
+          <span>💪 ${m.stats[0].v}</span>
+        </div>
+      </div>
+      <span class="card-view-hint">View Recipe →</span>`;
+    while (body.firstChild) card.appendChild(body.firstChild);
+
+    grid.appendChild(card);
+  });
+
+  // Open recipe clicks
+  grid.querySelectorAll('[data-open]').forEach(el => {
+    el.addEventListener('click', () => openModal(parseInt(el.dataset.open)));
+  });
+}
+
+// ── SWAP LOGIC ────────────────────────────────────────────────────────────
+function swapMeal(i) {
+  if (pool.length === 0) {
+    showToast('No more suggestions available!');
+    return;
+  }
+  const card = document.getElementById(`card-${i}`);
+  card.classList.add('swapping');
+
+  setTimeout(() => {
+    // Cycle through pool, skip any already in thisWeek
+    let attempts = 0;
+    let replacement;
+    const currentNames = thisWeek.map(m => m.name);
+    do {
+      replacement = pool[poolIndex % pool.length];
+      poolIndex++;
+      attempts++;
+    } while (currentNames.includes(replacement.name) && attempts < pool.length);
+
+    thisWeek[i] = replacement;
+    swapCounts[i]++;
+    renderGrid();
+
+    const newCard = document.getElementById(`card-${i}`);
+    newCard.classList.add('swapped-in');
+    setTimeout(() => newCard.classList.remove('swapped-in'), 400);
+
+    showToast(`${DAYS[i]} replaced with: ${replacement.name.split(' with ')[0].split(',')[0]}`);
+  }, 280);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(i) {
+  const m = thisWeek[i];
+  document.getElementById('mDayTag').textContent = `— ${DAYS[i]}'s dinner`;
+  document.getElementById('mEmoji').textContent = m.emoji;
+  document.getElementById('mTitle').textContent = m.name;
+  document.getElementById('mTagline').textContent = m.tagline;
+  document.getElementById('mStats').innerHTML = m.stats.map(s =>
+    `<div class="modal-stat"><div class="sv">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
+  document.getElementById('mIngredients').innerHTML = m.ingredients.map(ing =>
+    `<div class="ingredient"><div class="ingredient-dot"></div><span class="ingredient-qty">${ing.qty}</span><span class="ingredient-name">${ing.name}</span></div>`).join('');
+  document.getElementById('mSteps').innerHTML = m.steps.map((s, n) =>
+    `<li class="step"><div class="step-num">${n+1}</div><div class="step-text">${s}</div></li>`).join('');
+  document.getElementById('mTip').innerHTML = m.tip;
+  document.getElementById('modalBg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('modal').scrollTop = 0;
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('closeBtn').addEventListener('click', closeModal);
+document.getElementById('modalBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+renderGrid();
+</script>
+</body>
+</html>
